@@ -32,6 +32,6 @@ setuptools.setup(
         "joblib>=0.13.2",
 
     ],
-    url="https://gitlab.com/sandro.bjelogrlic/targen",
+    url="https://github.com/sbjelogr/targen",
     zip_safe=False,
 )
