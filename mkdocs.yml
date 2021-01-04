@@ -1,0 +1,17 @@
+site_name: targen
+repo_url: https://github.com/sbjelogr/targen
+
+theme:
+  name: material
+  palette:
+    scheme: preference
+
+nav:
+  - Home: index.md
+  - Demo: 1_Demo_Target.ipynb
+
+plugins:
+  - mknotebooks:
+      enable_default_jupyter_cell_styling: true
+      enable_default_pandas_dataframe_styling: true
+
