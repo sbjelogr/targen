@@ -8,8 +8,8 @@ def read(fname):
 
 setuptools.setup(
     name="targen",
-    version="0.1",
-    description="Tools for machine learning model validation",
+    version="0.1.1",
+    description="Tools for generating targets for ML experiments",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     author="Sandro Bjelogrlic",
