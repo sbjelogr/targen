@@ -2,7 +2,7 @@ site_name: targen
 repo_url: https://github.com/sbjelogr/targen
 
 theme:
-  name: material
+  name: readthedocs
   palette:
     scheme: preference
 
