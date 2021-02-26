@@ -9,7 +9,7 @@ def read(fname):
 setuptools.setup(
     name="targen",
     version="0.1.1",
-    description="Tools for generating targets for ML experiments",
+    description="Tools for generating targets for ML experiments. Documentation link: https://sbjelogr.github.io/targen/",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     author="Sandro Bjelogrlic",
