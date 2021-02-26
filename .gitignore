@@ -1,2 +1,6 @@
 docs/.ipynb_checkpoints
 .idea
+build
+dist
+targen.egg-info
+site
