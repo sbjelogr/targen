@@ -65,9 +65,7 @@ def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1, dro
         }
 
         target.get_target_and_contributions(data, expressions=expressions. imbalance = 0.2)
-
     """
-
     df_out = df.copy()
     for type_contr in expressions.keys():
         if type_contr in ['linear', 'non_linear', 'interaction']:
@@ -81,6 +79,13 @@ def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1, dro
         else:
             raise ValueError(f'Unsupported contribution {type_contr}')
 
+    pred_columns = [
+        col for col in df_out.columns
+        if col.startswith('score') and
+        not 'total' in col and not 'noise' in col
+    ]
+
+    df_out['score_pred'] = df_out[[col for col in pred_columns]].sum(axis=1)
     df_out['score_total'] = df_out[[col for col in df_out.columns if col.startswith('score')]].sum(axis=1)
 
     df_out['y'] = define_target( df_out['score_total'], imbalance_fraction=imbalance)
@@ -135,7 +140,6 @@ def score_from_expression(df,*,expr=None, scaler='minmax', shift = 0):
         score = target.score_from_expression(data, expr=expr)
 
     """
-
     df_feats = _rescale_data(df, scaler=scaler)
 
     score = None
@@ -148,7 +152,7 @@ def score_from_expression(df,*,expr=None, scaler='minmax', shift = 0):
 
 
 def score_with_condition(df, *, cond_expr=None,scaler='minmax', shift = 0):
-    """
+    """Defines the score based on the condition.
 
     Args:
         df: pd.DataFrame, input data
@@ -181,9 +185,7 @@ def score_with_condition(df, *, cond_expr=None,scaler='minmax', shift = 0):
 
         cond_scores = target.score_with_condition(data,cond_expr = cond_expr)
     """
-
     df_feats = _rescale_data(df, scaler=scaler)
-
 
     score = pd.Series(0, index = df.index)
     for k in cond_expr.keys():
@@ -193,7 +195,7 @@ def score_with_condition(df, *, cond_expr=None,scaler='minmax', shift = 0):
 
 
 def score_uniform_noise(df, *, weight=0, min =-1, max = 1):
-    """Define uniform noise contribution
+    """Define uniform noise contribution.
 
     Args:
         df: pd.DataFrame, input data
@@ -220,7 +222,6 @@ def score_gaussian_noise(df, *, weight=0, mu_gaus = 0, sigma_gaus = 1):
 
     Returns: pd.Series, scores coming from this contribution
     """
-
     return pd.Series(
         weight * np.random.normal(loc = mu_gaus, scale = sigma_gaus, size=df.shape[0]),
         index=df.index
@@ -229,7 +230,6 @@ def score_gaussian_noise(df, *, weight=0, mu_gaus = 0, sigma_gaus = 1):
 
 def _conditional_score(df, df_feats, cond, value):
     """Helper function to assign the conditional scores."""
-
     # get the true query
     if isinstance(value[0],str):
         true_q = df_feats.loc[df.query(cond).index].eval(value[0])
@@ -250,9 +250,7 @@ def _conditional_score(df, df_feats, cond, value):
     return pd.concat([true_q,false_q]).sort_index()
 
 def _rescale_data(df,*, scaler =None, columns = None):
-    """Helper function for rescaling the data.
-    """
-
+    """Helper function for rescaling the data."""
     if scaler is not None:
         if scaler=='minmax':
             scaler_trans = MinMaxScaler(feature_range=(0.00000001, 1))
