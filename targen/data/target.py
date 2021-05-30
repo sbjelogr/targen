@@ -5,7 +5,12 @@ from functools import reduce
 
 
 
-def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1, drop_features = True):
+def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1,
+                                 drop_features = True,
+                                 q_clip = (0.005,0.995),
+                                rescale_contributions = False,
+                                 contributions_scaler = 'minmax'
+                                 ):
     """Get the target and all the contribution by defining the relationships via the expression dictionary.
 
     Args:
@@ -79,14 +84,22 @@ def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1, dro
         else:
             raise ValueError(f'Unsupported contribution {type_contr}')
 
+    score_columns = [col for col in df_out.columns if col.startswith('score')]
+    df_out[score_columns] = df_out[score_columns].clip(df_out.quantile(q_clip[0]), df_out.quantile(q_clip[1]), axis=1)
+
+    if rescale_contributions:
+        df_out[score_columns]  = _rescale_data(df_out[score_columns] , scaler=contributions_scaler)
+
     pred_columns = [
-        col for col in df_out.columns
-        if col.startswith('score') and
-        not 'total' in col and not 'noise' in col
+        col for col in score_columns if not 'total' in col and not 'noise' in col
     ]
 
     df_out['score_pred'] = df_out[[col for col in pred_columns]].sum(axis=1)
     df_out['score_total'] = df_out[[col for col in df_out.columns if col.startswith('score')]].sum(axis=1)
+
+    # if rescale_contributions:
+    #     df_out[['score_pred']]  = _rescale_data(df_out[['score_pred']] , scaler=contributions_scaler)
+    #     df_out[['score_total']] = _rescale_data(df_out[['score_total']], scaler=contributions_scaler)
 
     df_out['y'] = define_target( df_out['score_total'], imbalance_fraction=imbalance)
 
@@ -114,12 +127,13 @@ def define_target(score, *, imbalance_fraction=0.1):
 
 
 
-def score_from_expression(df,*,expr=None, scaler='minmax', shift = 0):
+def score_from_expression(df,*,expr=None, weight=1, scaler='minmax', shift = 0):
     """Defines the score based on the expression.
 
     Args:
         df: pd.DataFrame, input data
         expr: string, contains the expression
+        weight: double, weight to apply.
         scaler: type of scaler to be used. Choose between 'minmax', 'standard' or None
         shift: float, uniform shift to apply to all the score expressions
 
@@ -148,15 +162,16 @@ def score_from_expression(df,*,expr=None, scaler='minmax', shift = 0):
     else:
         score = pd.Series(np.zeros(shape=df.feats.shape[0],), index = df_feats.index)
 
-    return score + shift
+    return weight*score + shift
 
 
-def score_with_condition(df, *, cond_expr=None,scaler='minmax', shift = 0):
+def score_with_condition(df, *, cond_expr=None,weight =1, scaler='minmax', shift = 0):
     """Defines the score based on the condition.
 
     Args:
         df: pd.DataFrame, input data
         cond_expr: dict, contains the condition and the expressions to apply, see example below.
+        weight: double, weight to apply.
         scaler: type of scaler to be used. Choose between 'minmax', 'standard' or None
         shift: float, uniform shift to apply to all the score expressions
 
@@ -191,7 +206,7 @@ def score_with_condition(df, *, cond_expr=None,scaler='minmax', shift = 0):
     for k in cond_expr.keys():
         score+= _conditional_score(df, df_feats, k,cond_expr[k])
 
-        return score + shift
+    return weight*score + shift
 
 
 def score_uniform_noise(df, *, weight=0, min =-1, max = 1):
