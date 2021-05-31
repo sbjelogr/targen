@@ -8,6 +8,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Getting started: Start.ipynb
   - Demo: 1_Demo_Target.ipynb
 
 plugins:

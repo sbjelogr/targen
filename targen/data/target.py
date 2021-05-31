@@ -70,13 +70,79 @@ def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1,
         }
 
         target.get_target_and_contributions(data, expressions=expressions. imbalance = 0.2)
+
+
+    Example 2:
+        from sklearn.datasets import make_classification
+        import pandas as pd
+        import numpy as np
+        from data import target
+
+        X, dummy = make_classification( n_samples=100,n_features=20)
+
+        data = pd.DataFrame(X, columns = [f'col_{ix}' for ix in range(X.shape[1])])
+
+        expressions = {}
+
+        # linear component
+        expressions['linear'] = {
+            'weight':0.5,
+            'expr':'-0.5*col_0 + 2.*col_1 + 0.7*col_4 -0.4*col_3'
+        }
+
+        # non linear component
+        expressions['non_linear'] = {
+            'weight':0.1,
+            'expr':'-0.7*col_1**1.5 + 0.2*sin(col_2)+ 0.9*log(col_4+0.5) -0.1*col_3**2'
+        }
+
+        # interaction component
+        expressions['interaction'] = {
+            'weight':0.9,
+            'expr':'0.7*col_3*col_4 -0.5*(col_2/(col_1+col_2))'
+        }
+
+        # conditional component
+        expressions['conditional']= {
+            'weight':0.4,
+            'expr':{
+                'col_0>0':(
+                    '-0.5*col_0 + 2.*col_1 + 0.7*col_4 -0.4*col_3', #True
+                    0 #False
+                ),
+                'col_2>0.15':(
+                    '-0.5*col_0 + 2.*col_2 + 0.2*col_1 -0.7*col_4',#True
+                    '-0.5*col_1' #False
+                )
+            }
+        }
+
+        expressions['uniform_noise'] = {'weight':0.5}
+        expressions['gaussian_noise'] = {
+            'weight':0.5,
+            'mu_gaus': 2.22
+        }
+
+        target.get_target_and_contributions(data, expressions=expressions. imbalance = 0.2)
     """
     df_out = df.copy()
     for type_contr in expressions.keys():
         if type_contr in ['linear', 'non_linear', 'interaction']:
-            df_out[f'score_{type_contr}'] = score_from_expression(df, expr = expressions[type_contr])
+            if isinstance(expressions[type_contr], dict):
+                expression = expressions[type_contr]['expr']
+                weight = expressions[type_contr]['weight']
+            else:
+                expression = expressions[type_contr]
+                weight= 1
+            df_out[f'score_{type_contr}'] = score_from_expression(df, expr = expression, weight=weight)
         elif type_contr == 'conditional':
-            df_out[f'score_{type_contr}'] = score_with_condition(df, cond_expr = expressions[type_contr])
+            if isinstance(expressions[type_contr], dict):
+                expression = expressions[type_contr]['expr']
+                weight = expressions[type_contr]['weight']
+            else:
+                expression = expressions[type_contr]
+                weight= 1
+            df_out[f'score_{type_contr}'] = score_with_condition(df, cond_expr = expression)
         elif type_contr=='uniform_noise':
             df_out[f'score_{type_contr}'] = score_uniform_noise(df, **expressions[type_contr])
         elif type_contr=='gaussian_noise':
