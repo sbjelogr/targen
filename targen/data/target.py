@@ -150,14 +150,14 @@ def get_target_and_contributions(df, *, expressions = None, imbalance = 0.1,
         else:
             raise ValueError(f'Unsupported contribution {type_contr}')
 
-    score_columns = [col for col in df_out.columns if col.startswith('score')]
-    df_out[score_columns] = df_out[score_columns].clip(df_out.quantile(q_clip[0]), df_out.quantile(q_clip[1]), axis=1)
+    contribution_columns = [col for col in df_out.columns if col.startswith('score') and 'noise' not in col]
+    df_out[contribution_columns] = df_out[contribution_columns].clip(df_out.quantile(q_clip[0]), df_out.quantile(q_clip[1]), axis=1)
 
     if rescale_contributions:
-        df_out[score_columns]  = _rescale_data(df_out[score_columns] , scaler=contributions_scaler)
+        df_out[contribution_columns]  = _rescale_data(df_out[contribution_columns] , scaler=contributions_scaler)
 
     pred_columns = [
-        col for col in score_columns if not 'total' in col and not 'noise' in col
+        col for col in contribution_columns if not 'total' in col and not 'noise' in col
     ]
 
     df_out['score_pred'] = df_out[[col for col in pred_columns]].sum(axis=1)
